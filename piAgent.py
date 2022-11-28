@@ -100,7 +100,7 @@ def sendMemory():
     c8y.publish("s/uc/pi", tempString)
 
 
-def sendMeasurements(stopEvent, interval):
+def sendMeasurements(stopEvent, interval, threshold):
     c8y.logger.info('Starting sendMeasurement with interval: '+ str(interval))
     sense_hat = SenseHat()
     samples = deque(maxlen=10)
@@ -115,7 +115,7 @@ def sendMeasurements(stopEvent, interval):
                     #print(pressure)
                     #print('delta - ',abs(pressure - samples[0]))
                     #print(f'value: {pressure}, num samples: {N}, total: {total}, moving average: {moving_average}')
-                    if abs(pressure - samples[0]) > 0.1:
+                    if abs(pressure - samples[0]) > threshold:
                         #print('sample 0 - ', samples[0])
 
                         sense.send()
@@ -411,7 +411,7 @@ def runAgent():
     c8y.connect(on_message_default,config.get('device', 'subscribe'))
     c8y.logger.info('Starting sendMeasurements.')
     
-    sendThread = Thread(target=sendMeasurements, args=(stopEvent, int(config.get('device','sendinterval'))))
+    sendThread = Thread(target=sendMeasurements, args=(stopEvent, int(config.get('device','sendinterval')), float(config.get('device','threshold'))))
     sendThread.start()
 
 
