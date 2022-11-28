@@ -23,8 +23,8 @@ from requests.auth import HTTPBasicAuth
 from zipfile import ZipFile
 from device_proxy import DeviceProxy 
 import concurrent.futures
-
-
+from collections import deque
+from sense_hat import SenseHat
 
 
 def sendConfiguration():
@@ -102,12 +102,25 @@ def sendMemory():
 
 def sendMeasurements(stopEvent, interval):
     c8y.logger.info('Starting sendMeasurement with interval: '+ str(interval))
+    sense_hat = SenseHat()
+    samples = deque(maxlen=10)
     try:
         while True:
             c8y.logger.info('sendMeasurements called')
 
             try:
-                sense.send()
+                while True:
+                    pressure = sense_hat.get_pressure()
+                    samples.append(pressure)
+                    #print(pressure)
+                    #print('delta - ',abs(pressure - samples[0]))
+                    #print(f'value: {pressure}, num samples: {N}, total: {total}, moving average: {moving_average}')
+                    if abs(pressure - samples[0]) > 0.1:
+                        #print('sample 0 - ', samples[0])
+
+                        sense.send()
+                    #time.sleep(0.25)
+                    
             except Exception:
                 c8y.logger.info("No sense hat found omitting.")
             
@@ -397,6 +410,7 @@ def runAgent():
     ### Operational connection
     c8y.connect(on_message_default,config.get('device', 'subscribe'))
     c8y.logger.info('Starting sendMeasurements.')
+    
     sendThread = Thread(target=sendMeasurements, args=(stopEvent, int(config.get('device','sendinterval'))))
     sendThread.start()
 
@@ -421,6 +435,16 @@ c8y = C8yMQTT(
             config.get('device','client_key'),
             loglevel=logging.getLevelName(config.get('device', 'loglevel')))
 
+
+
+
+    
+    
+    
+    
+        
+        
+
 try:
     ### Try to load sensehat extension
     from sensehat import Sense
@@ -429,6 +453,7 @@ except Exception as e:
     c8y.logger.error("Sense Hat Error:" + str(e))
 try:
     runAgent()
+
 except Exception as e:
     c8y.logger.error("runAgent Error:" + str(e))
 
