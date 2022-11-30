@@ -5,7 +5,7 @@ Description=Cumulocity PI Agent
 After=multi-user.target
 
 [Service]
-User=pi
+User=amlog
 ExecStartPre=/bin/sleep 3
 Type=idle
 WorkingDirectory=$(pwd)
